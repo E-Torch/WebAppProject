@@ -31,15 +31,20 @@ class Router:
         return self.NotFound
 
 
-def somefunc():
-    return b"test"
+def index():
+    return Response("200 OK", "hello world", "text/html").makeResponse()
 
 
 if __name__ == "__main__":
+    request = Request(
+        b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n"
+    )
     r = Router()
+    res = index()
+    r.add_route("GET", "/$", index)
+
+    assert res == r.route_request(request)
     request = Request(
         b"DELETE / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n"
     )
-    r.add_route("GET", "/$", somefunc)
-    r.add_route("POST", "/$", somefunc)
-    print(r.route_request(request))
+    assert r.NotFound == r.route_request(request)
