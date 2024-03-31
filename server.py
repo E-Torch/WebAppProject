@@ -28,6 +28,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # print(received_data)
         # print("--- end of data ---\n\n")
         request = Request(received_data)
+        print(request.headers)
+        print(request.body)
         if request.method == "GET" and request.path == "/":
             response = self.getIndex(mimeTypes, request)
             self.request.sendall(response.makeResponse())
