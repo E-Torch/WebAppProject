@@ -52,7 +52,6 @@ def setPublicResponse(filepath, mime):
 
 def getFiles(path):
     path = os.path.join(os.path.dirname(__file__), "../", path[1:])
-    print(path)
     if os.path.isfile(path):
         ext = path.split(".").pop()
         mime = mimeTypes[ext]
