@@ -1,4 +1,6 @@
 from database.chat import *
+from database.session import get_decode, get_xsrf_token, validate_session
+from util.request import Request
 from util.response import Response
 
 
@@ -26,21 +28,34 @@ def get_single_chat_message(request):
 
 def delete_chat_message(request):
     path_id = request.path.split("/").pop()
-    if has_remove_chat_message(path_id):
-        return Response("204 No Content", "", "text/plain").makeResponse()
+    if "AUTH_TOKEN" in request.cookies and validate_session(
+        request.cookies["AUTH_TOKEN"]
+    ):
+        user = get_decode(request.cookies["AUTH_TOKEN"])
+        if has_remove_chat_message(path_id, user):
+            return Response("204 No Content", "", "text/plain").makeResponse()
 
-    else:
-        return Response(
-            "404 Not Found", "no record exist to delete", "text/plain"
-        ).makeResponse()
+    return Response("403 Forbidden", "user not logged in", "text/plain").makeResponse()
 
 
-def post_chat_message(request):
+def post_chat_message(request: Request):
     request.html_escape_body()
-    message = json.loads(request.body)["message"]
+    json_req = json.loads(request.body)
+    message = json_req["message"]
+    if "AUTH_TOKEN" in request.cookies and validate_session(
+        request.cookies["AUTH_TOKEN"]
+    ):
+        user = get_decode(request.cookies["AUTH_TOKEN"])
+        xsrf_token = get_xsrf_token(request.cookies["AUTH_TOKEN"])
+        if json_req["xsrf-token"] == xsrf_token.decode("utf-8"):
+            return Response(
+                "201 Created", add_new_chat(message, user), "application/json"
+            ).makeResponse()
+        else:
+            return Response("403 Forbidden", "auth error", "text/plain").makeResponse()
 
     return Response(
-        "201 Created", add_new_chat(message), "application/json"
+        "201 Created", add_new_chat(message, "Guest"), "application/json"
     ).makeResponse()
 
 

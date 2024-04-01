@@ -27,15 +27,15 @@ def get_chat_message(id):
     return json.dumps(message)
 
 
-def has_remove_chat_message(id):
-    result = chat_collection.delete_one({"id": id})
+def has_remove_chat_message(id, user):
+    result = chat_collection.delete_one({"id": id, "username": user})
     return result.deleted_count != 0
 
 
-def add_new_chat(message):
+def add_new_chat(message, user):
     result = chat_collection.insert_one(
         {
-            "username": "Guest",
+            "username": user,
             "message": message,
             "id": str(get_count(chat_collection) + 1),
         }
@@ -50,11 +50,11 @@ def add_new_chat(message):
     return json.dumps(message)
 
 
-def has_update_chat(id, json):
+def has_update_chat(id, message, user):
     query = {"id": id}
     update = {
-        "message": json["message"],
-        "username": json["username"],
+        "message": message,
+        "username": user,
     }
     result = chat_collection.update_one(query, update)
     return result.modified_count != 0
