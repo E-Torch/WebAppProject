@@ -1,18 +1,18 @@
 import json
 import socketserver
 import os
+from database.chat import *
 from util.request import Request
 from util.response import Response
 from pymongo import MongoClient
 
-CURRPATH = os.path.dirname(__file__)
+from util.router import Router
 
-mongo_client = MongoClient("database")
-db = mongo_client["cse312"]
-chat_collection = db["chat"]
+CURRPATH = os.path.dirname(__file__)
 
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
+    router = Router()
 
     def handle(self):
         mimeTypes = {
@@ -28,8 +28,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # print(received_data)
         # print("--- end of data ---\n\n")
         request = Request(received_data)
-        print(request.headers)
-        print(request.body)
         if request.method == "GET" and request.path == "/":
             response = self.getIndex(mimeTypes, request)
             self.request.sendall(response.makeResponse())
@@ -49,30 +47,16 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             path = path_arr.pop(0)
 
         if request.method == "GET" and path == "chat-messages" and path_id == "":
-            array = []
-            result = chat_collection.find({})
-            for collection in result:
-                message = {}
-                message["message"] = collection["message"]
-                message["username"] = collection["username"]
-                message["id"] = collection["id"]
-                array.append(message)
-            array = json.dumps(array)
-            response = Response("200 OK", array, "text/plain").makeResponse()
+
+            response = Response(
+                "200 OK", get_all_chat_messages(), "text/plain"
+            ).makeResponse()
             self.request.sendall(response)
 
             return
         if request.method == "GET" and path == "chat-messages" and path_id != "":
-            message = {}
-            result = chat_collection.find({"id": path_id})
-            for collection in result:
-
-                message["message"] = collection["message"]
-                message["username"] = collection["username"]
-                message["id"] = collection["id"]
-
+            message = get_chat_message(path_id)
             if "id" in message:
-                message = json.dumps(message)
                 response = Response(
                     "200 OK", message, "application/json"
                 ).makeResponse()
@@ -82,8 +66,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             return
 
         if request.method == "DELETE" and path == "chat-messages" and path_id != "":
-            result = chat_collection.delete_one({"id": path_id})
-            if result.deleted_count:
+
+            if has_remove_chat_message(path_id):
                 response = Response("204 No Content", b"", "text/plain").makeResponse()
                 self.request.sendall(response)
             else:
@@ -91,23 +75,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             return
         if request.method == "PUT" and path == "chat-messages" and path_id != "":
             request.html_escape_body()
-            request.body = json.loads(request.body)
-            query = {"id": path_id}
-            update = {
-                "message": request.body["message"],
-                "username": request.body["username"],
-            }
-            result = chat_collection.update_one(query, update)
-            if result.modified_count:
-                result = chat_collection.find({"id": path_id})
-                message = {}
-                for collection in result:
-                    message["message"] = collection["message"]
-                    message["username"] = collection["username"]
-                    message["id"] = collection["id"]
-                message = json.dumps(message)
+            if has_update_chat(path_id, json.loads(request.body)):
                 response = Response(
-                    "200 okay", message, "application/json"
+                    "200 okay", get_chat_message(path_id), "application/json"
                 ).makeResponse()
                 self.request.sendall(response)
             else:
@@ -115,25 +85,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             return
         if request.method == "POST" and path == "chat-messages":
             request.html_escape_body()
-            request.body = json.loads(request.body)
-            chat_count = self.get_count(chat_collection)
-            result = chat_collection.insert_one(
-                {
-                    "username": "Guest",
-                    "message": request.body["message"],
-                    "id": str(chat_count + 1),
-                }
-            )
+            message = json.loads(request.body)["message"]
 
-            result = chat_collection.find({"_id": result.inserted_id})
-            message = {}
-            for collection in result:
-                message["message"] = collection["message"]
-                message["username"] = collection["username"]
-                message["id"] = collection["id"]
-            message = json.dumps(message)
             response = Response(
-                "201 Created", message, "application/json"
+                "201 Created", add_new_chat(message), "application/json"
             ).makeResponse()
             self.request.sendall(response)
             return
@@ -143,12 +98,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     def send404(self, msg):
         response = Response("404 Not Found", msg, "text/plain").makeResponse()
         self.request.sendall(response)
-
-    def get_count(self, chat_collection):
-        chat_count = 0
-        for l in chat_collection.find({}):
-            chat_count += 1
-        return chat_count
 
     def getOtherFiles(self, MIME, request):
         path = os.path.join(CURRPATH, request.path[1:])
