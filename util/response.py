@@ -33,12 +33,8 @@ class Response:
         hrds = ""
         for key in self.headers:
             hrds += key + ": " + self.headers[key] + "\r\n"
-
-        if len(self.cookies):
-            hrds += "Set-Cookie: "
         for key in self.cookies:
-
-            hrds = hrds + key + "=" + self.cookies[key] + "; "
+            hrds = hrds + "Set-Cookie: " + key + "=" + self.cookies[key] + "; "
         hrds = hrds[:-2] + "\r\n\r\n"
 
         return str.encode(self.status_ln + hrds) + self.body
