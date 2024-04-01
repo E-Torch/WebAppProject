@@ -2,6 +2,7 @@ import json
 import socketserver
 import os
 from database.chat import *
+from routes.chat import add_chat_routes
 from routes.static import add_static_routes
 from util.request import Request
 from util.response import Response
@@ -13,6 +14,7 @@ from util.router import Router
 class MyTCPHandler(socketserver.BaseRequestHandler):
     router = Router()
     add_static_routes(router)
+    add_chat_routes(router)
 
     def handle(self):
 

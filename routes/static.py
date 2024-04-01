@@ -1,6 +1,5 @@
 import os
 from util.response import Response
-from util.router import Router
 
 mimeTypes = {
     "js": "text/javascript",
@@ -11,7 +10,7 @@ mimeTypes = {
 }
 
 
-def add_static_routes(router: Router):
+def add_static_routes(router):
     router.add_route("GET", "/$", get_index)
     router.add_route("GET", "/public/.", get_static_files)
 
