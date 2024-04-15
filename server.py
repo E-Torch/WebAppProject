@@ -15,8 +15,16 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     add_auth_routes(router)
 
     def handle(self):
-
         received_data = self.request.recv(2048)
+        request = Request(received_data)
+        if "Content-Length" in request.headers:
+            while len(request.body) != int(request.headers["Content-Length"]):
+                request.body += self.request.recv(2048)
+            print(len(request.body), int(request.headers["Content-Length"]))
+        # print(self.client_address)
+        # print("--- received data ---")
+        # print(received_data)
+        # print("--- end of data ---\n\n")
         request = Request(received_data)
         res = self.router.route_request(request)
         self.request.sendall(res)
