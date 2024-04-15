@@ -1,16 +1,10 @@
 import re
 
-# from util.request import Request
-# from util.response import Response
-
-
 class Router:
     def __init__(self):
         self.routes = []
         self.NotFound = b"HTTP/1.1 404 Not Found\r\nX-Content-Type-Options: nosniff\r\nContent-Type: text/plain\r\nContent-Length: 14\r\n\r\nno route exist"
         pass
-
-        # A method named "add_route" that takes 3 parameters: The HTTP method (str), the path (str), a function that takes a Request object (from your util/request.py file) and returns a byte array (bytes) that will be the bytes of the response that will be sent to the client. The add_route method itself does not return anything. The function that is the third parameter does return bytes
 
     def add_route(self, http_method: str, path: str, on_route):
         regex = r"^{}".format(path)
@@ -28,23 +22,3 @@ class Router:
             ):
                 return item[request.method](request)
         return self.NotFound
-
-
-# def index():
-#     return Response("200 OK", "hello world", "text/html").makeResponse()
-
-
-# if __name__ == "__main__":
-#     request = Request(
-#         b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n"
-#     )
-#     r = Router()
-#     res = index()
-#     r.add_route("GET", "/$", index)
-
-#     assert res == r.route_request(request)
-#     request = Request(
-#         b"DELETE / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n"
-#     )
-#     print(r.NotFound)
-#     assert r.NotFound == r.route_request(request)

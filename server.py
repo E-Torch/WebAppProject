@@ -17,10 +17,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
 
         received_data = self.request.recv(2048)
-        # print(self.client_address)
-        # print("--- received data ---")
-        # print(received_data)
-        # print("--- end of data ---\n\n")
         request = Request(received_data)
         res = self.router.route_request(request)
         self.request.sendall(res)
