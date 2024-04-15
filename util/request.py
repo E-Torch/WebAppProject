@@ -2,7 +2,7 @@ class Request:
 
     def __init__(self, request: bytes):
         # TODO: parse the bytes of the request and populate the following instance variables
-        hrds = request.split(b"\r\n\r\n")
+        hrds = request.split(b"\r\n\r\n", 1)
         self.body = hrds.pop()
 
         hrds = hrds.pop().decode("utf-8").split("\r\n")
@@ -74,7 +74,7 @@ def test_cookie_get_request():
 
 def test_body_get_request():
     request = Request(
-        b"GET /body HTTP/1.1\r\nHost: localhost:5000\r\nConnection: keep-alive\r\nCookie: id=X645a6AST; visits=3; =15\r\n\r\nHello World!"
+        b"GET /body HTTP/1.1\r\nHost: localhost:5000\r\nConnection: keep-alive\r\nCookie: id=X645a6AST; visits=3; =15\r\n\r\nHello World!\r\n\r\n"
     )
     assert request.method == "GET"
     assert request.path == "/body"
@@ -89,7 +89,7 @@ def test_body_get_request():
     assert request.cookies["id"] == "X645a6AST"
     assert request.cookies["visits"] == "3"
     assert request.cookies[""] == "15"
-    assert request.body == b"Hello World!"
+    assert request.body == b"Hello World!\r\n\r\n"
 
 
 def test_simple_post_request():
@@ -113,4 +113,3 @@ if __name__ == "__main__":
     test_cookie_get_request()
     test_body_get_request()
     test_simple_post_request()
-    print("all test passed")
