@@ -36,7 +36,7 @@ class Response:
         for key in self.cookies:
             hrds = hrds + "Set-Cookie: " + key + "=" + self.cookies[key] + "; "
         hrds = hrds[:-2] + "\r\n\r\n"
-
+        print(self.status_ln)
         return str.encode(self.status_ln + hrds) + self.body
 
 

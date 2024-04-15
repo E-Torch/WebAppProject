@@ -1,6 +1,7 @@
 import socketserver
 from routes.auth import add_auth_routes
 from routes.chat import add_chat_routes
+from routes.upload import add_upload_routes
 from routes.static import add_static_routes
 from util.request import Request
 
@@ -13,6 +14,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     add_static_routes(router)
     add_chat_routes(router)
     add_auth_routes(router)
+    add_upload_routes(router)
 
     def handle(self):
         received_data = self.request.recv(2048)
@@ -25,7 +27,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # print("--- received data ---")
         # print(received_data)
         # print("--- end of data ---\n\n")
-        request = Request(received_data)
         res = self.router.route_request(request)
         self.request.sendall(res)
 

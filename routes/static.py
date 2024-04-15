@@ -7,6 +7,7 @@ mimeTypes = {
     "css": "text/css",
     "ico": "image/x-icon",
     "jpg": "image/jpg",
+    "mp4": "video/mp4",
     "html": "text/html; charset=UTF-8",
 }
 
@@ -73,7 +74,8 @@ def check_visits_cookie(request, response):
 
 
 def getFile(path: str):
-
+    if path.find("..") != -1:
+        return None
     path = os.path.join(os.path.dirname(__file__), "../public/", path)
     if os.path.isfile(path):
         f = open(
@@ -105,7 +107,7 @@ def _change_to_logout_button(body, xsrf_token):
 
 
 def _make_static_response(body, ext):
-    if body == None and ext in mimeTypes:
+    if body == None or mimeTypes.get(ext) == None:
         return Response("404 Not Found", "", "text/plain").makeResponse()
     mime = mimeTypes[ext]
     return Response("200 OK", body, mime).makeResponse()

@@ -10,6 +10,16 @@ class Part:
         self.name = n
         self.content = c
 
+    def get_file_ext(self):
+        return (
+            self.headers["Content-Disposition"]
+            .split(" filename=")
+            .pop(1)
+            .split(".")
+            .pop()
+            .strip('"')
+        )
+
 
 def parse_multipart(request):
     boundary = request.headers["Content-Type"].split("boundary=").pop()
