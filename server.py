@@ -18,6 +18,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         received_data = self.request.recv(2048)
+        if len(received_data) == 0:
+            return
         request = Request(received_data)
         if "Content-Length" in request.headers:
             while len(request.body) != int(request.headers["Content-Length"]):
