@@ -25,10 +25,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             while len(request.body) != int(request.headers["Content-Length"]):
                 request.body += self.request.recv(2048)
             print(len(request.body), int(request.headers["Content-Length"]))
-        # print(self.client_address)
-        # print("--- received data ---")
-        # print(received_data)
-        # print("--- end of data ---\n\n")
+        print(self.client_address)
+        print("--- received data ---")
+        print(received_data)
+        print("--- end of data ---\n\n")
         res = self.router.route_request(request)
         self.request.sendall(res)
 
