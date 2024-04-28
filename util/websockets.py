@@ -21,10 +21,10 @@ def parse_ws_frame(frame: bytes):
     opcode_mask = 0x0F
     payload_len_7bit = 0x7F
 
-    finbit = fin_mask & frame[0]
+    finbit = (fin_mask & frame[0]) >> 7
     opcode = opcode_mask & frame[0]
     payload_len, payload_start = _get_payload_len(frame, payload_len_7bit & frame[1])
-    payload = _get_payload(frame, fin_mask, payload_start)
+    payload = _get_payload(frame, fin_mask, payload_start, payload_len)
     return SocketFrame(finbit, opcode, payload_len, payload)
 
 
@@ -40,19 +40,21 @@ def _get_payload_len(frame, payload_len):
     return [payload_len, payload_start]
 
 
-def _get_payload(frame, fin_mask, payload_start):
-    mask = fin_mask & frame[1]
+def _get_payload(frame, fin_mask, payload_start, payload_len):
+    mask = (fin_mask & frame[1]) >> 7
     mask_result = b""
     if mask:
         mask_info = frame[payload_start : payload_start + 4]
         payload_start += 4
         payload = frame[payload_start:]
         p_index = 0
-        while p_index < len(payload):
+        while p_index < payload_len:
             for i in range(4):
-                if i + p_index >= len(payload):
+                if i + p_index >= payload_len:
                     break
-                mask_result += payload[i + p_index] ^ frame[i]
+                m = payload[i + p_index] ^ mask_info[i]
+                mask_result += m.to_bytes(1, "big")
+
             p_index += 4
         return mask_result
 
@@ -60,7 +62,7 @@ def _get_payload(frame, fin_mask, payload_start):
 
 
 def _get_extended(frame, end):
-    data = frame[1:end]
+    data = frame[2:end]
     return _create_int_from_byte(data)
 
 
@@ -69,9 +71,30 @@ def _create_int_from_byte(byte_len):
 
 
 def generate_ws_frame(payload: bytes):
-    return b""
+    payload_len = len(payload)
+    if payload_len < 126:
+        payload_len = payload_len.to_bytes(1, "big")
+    elif payload_len < 65536:
+        payload_len = b"\x7e" + payload_len.to_bytes(2, "big")
+    else:
+        payload_len = b"\x7f" + payload_len.to_bytes(8, "big")
+
+    return b"\x81" + payload_len + payload
 
 
 if __name__ == "__main__":
     res = compute_accept("x6BweGU0VvnAoNDZAvk9nw==")
     assert res == "YeRsVEUiNewITV9hNUolbpQg12w="
+    frame = b"\x81\x86\x1A\x2B\x3C\x4D\x52\x4e\x50\x21\x75\x0a"
+    ws = parse_ws_frame(frame)
+    assert ws.fin_bit == 1
+    assert ws.opcode == 1
+    assert ws.payload_length == 6
+    assert ws.payload == b"Hello!"
+
+    frame = b"\x81\x06Hello!"
+    ws = parse_ws_frame(frame)
+    assert ws.fin_bit == 1
+    assert ws.opcode == 1
+    assert ws.payload_length == 6
+    assert ws.payload == b"Hello!"
