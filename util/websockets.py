@@ -23,12 +23,12 @@ def parse_ws_frame(frame: bytes):
 
     finbit = (fin_mask & frame[0]) >> 7
     opcode = opcode_mask & frame[0]
-    payload_len, payload_start = _get_payload_len(frame, payload_len_7bit & frame[1])
+    payload_len, payload_start = get_payload_len(frame, 0x7F & frame[1])
     payload = _get_payload(frame, fin_mask, payload_start, payload_len)
     return SocketFrame(finbit, opcode, payload_len, payload)
 
 
-def _get_payload_len(frame, payload_len):
+def get_payload_len(frame, payload_len):
     payload_start = 2
     if payload_len == 0x7E:
         payload_start += 2
@@ -46,11 +46,11 @@ def _get_payload(frame, fin_mask, payload_start, payload_len):
     if mask:
         mask_info = frame[payload_start : payload_start + 4]
         payload_start += 4
-        payload = frame[payload_start:]
+        payload = frame[payload_start : payload_start + payload_len]
         p_index = 0
-        while p_index < payload_len:
+        while p_index < len(payload):
             for i in range(4):
-                if i + p_index >= payload_len:
+                if i + p_index >= len(payload):
                     break
                 m = payload[i + p_index] ^ mask_info[i]
                 mask_result += m.to_bytes(1, "big")
@@ -58,7 +58,7 @@ def _get_payload(frame, fin_mask, payload_start, payload_len):
             p_index += 4
         return mask_result
 
-    return frame[payload_start:]
+    return frame[payload_start : payload_start + payload_len]
 
 
 def _get_extended(frame, end):

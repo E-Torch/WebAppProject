@@ -57,6 +57,7 @@ def get_other_frames(tcp, frame_info):
         p, extra_bytes = _get_rest_bytes(tcp, frame_info)
         payload += p
         if len(extra_bytes) == 0:
+            print("here")
             received_data = tcp.request.recv(2048)
             frame_info = parse_ws_frame(received_data)
         else:
@@ -71,7 +72,7 @@ def get_other_frames(tcp, frame_info):
 
 def _get_rest_bytes(tcp, frame_info):
     extra_bytes = b""
-    
+
     while frame_info.payload_length != len(frame_info.payload):
         if frame_info.payload_length < len(frame_info.payload):
             received_data = tcp.request.recv(2048)
