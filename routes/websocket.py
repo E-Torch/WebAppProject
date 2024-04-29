@@ -35,8 +35,7 @@ def buffer_socket_response(request: Request, tcp, user, accept_sec):
     extra_bytes = b""
     payload = b""
     frame = None
-    if user != "Guest":
-        handleMessage(request, {"messageType": "updateList"})
+    handleMessage(request, {"messageType": "updateList"})
     while True:
         if len(extra_bytes) == 0:
             received_data = tcp.request.recv(2048)
@@ -53,8 +52,8 @@ def buffer_socket_response(request: Request, tcp, user, accept_sec):
             received_data += tcp.request.recv(2048)
             frame = parse_ws_frame(received_data)
         if frame.opcode == 8:
-            handleMessage(request, {"messageType": "updateList"})
             socket_users.pop(accept_sec)
+            handleMessage(request, {"messageType": "updateList"})
             break
         extra_bytes = frame.extra
         payload += frame.payload
@@ -93,6 +92,7 @@ def handleMessage(request, data):
                 userList.append(user)
         list_to_send = {"messageType": "updateList", "list": userList}
         msg = json.dumps(list_to_send).encode()
+        print(userList)
         for i in socket_users:
             socket_users[i][1].request.sendall(generate_ws_frame(msg))
 
