@@ -29,7 +29,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("--- received data ---")
         print(received_data)
         print("--- end of data ---\n\n")
-        res = self.router.route_request(request)
+        res = self.router.route_request(request, self)
         self.request.sendall(res)
 
 
@@ -39,7 +39,7 @@ def main():
 
     socketserver.TCPServer.allow_reuse_address = True
 
-    server = socketserver.TCPServer((host, port), MyTCPHandler)
+    server = socketserver.ThreadingTCPServer((host, port), MyTCPHandler)
 
     print("Listening on port " + str(port))
 
