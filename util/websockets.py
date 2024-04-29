@@ -85,15 +85,15 @@ def generate_ws_frame(payload: bytes):
 if __name__ == "__main__":
     res = compute_accept("x6BweGU0VvnAoNDZAvk9nw==")
     assert res == "YeRsVEUiNewITV9hNUolbpQg12w="
-    frame = b"\x81\x86\x1A\x2B\x3C\x4D\x52\x4e\x50\x21\x75\x0a"
-    ws = parse_ws_frame(frame)
+    frame_info = b"\x81\x86\x1A\x2B\x3C\x4D\x52\x4e\x50\x21\x75\x0a"
+    ws = parse_ws_frame(frame_info)
     assert ws.fin_bit == 1
     assert ws.opcode == 1
     assert ws.payload_length == 6
     assert ws.payload == b"Hello!"
 
-    frame = b"\x81\x06Hello!"
-    ws = parse_ws_frame(frame)
+    frame_info = b"\x81\x06Hello!"
+    ws = parse_ws_frame(frame_info)
     assert ws.fin_bit == 1
     assert ws.opcode == 1
     assert ws.payload_length == 6

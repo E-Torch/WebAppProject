@@ -24,7 +24,7 @@ class Router:
                 and request.method in item
             ):
                 if item["tcp_status"]:
-                    return item[request.method](request, tcp)
+                    return [item[request.method](request, tcp), item["tcp_status"]]
                 else:
-                    return item[request.method](request)
+                    return [item[request.method](request), item["tcp_status"]]
         return self.NotFound

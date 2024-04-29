@@ -3,6 +3,7 @@ from routes.auth import add_auth_routes
 from routes.chat import add_chat_routes
 from routes.upload import add_upload_routes
 from routes.static import add_static_routes
+from routes.websocket import add_websocket_routes
 from util.request import Request
 
 
@@ -15,6 +16,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     add_chat_routes(router)
     add_auth_routes(router)
     add_upload_routes(router)
+    add_websocket_routes(router)
 
     def handle(self):
         received_data = self.request.recv(2048)
@@ -29,8 +31,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("--- received data ---")
         print(received_data)
         print("--- end of data ---\n\n")
-        res = self.router.route_request(request, self)
-        self.request.sendall(res)
+        res, hasHandleReq = self.router.route_request(request, self)
+        if not hasHandleReq:
+            self.request.sendall(res)
 
 
 def main():
