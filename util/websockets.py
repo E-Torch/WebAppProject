@@ -2,11 +2,12 @@ import hashlib, base64
 
 
 class SocketFrame:
-    def __init__(self, f, o, p_len, p):
+    def __init__(self, f, o, p_len, p, e):
         self.fin_bit = f
         self.opcode = o
         self.payload_length = p_len
         self.payload = p
+        self.extra = e
 
 
 def compute_accept(key: str):
@@ -24,8 +25,8 @@ def parse_ws_frame(frame: bytes):
     finbit = (fin_mask & frame[0]) >> 7
     opcode = opcode_mask & frame[0]
     payload_len, payload_start = get_payload_len(frame, 0x7F & frame[1])
-    payload = _get_payload(frame, fin_mask, payload_start, payload_len)
-    return SocketFrame(finbit, opcode, payload_len, payload)
+    payload, extra = _get_payload(frame, fin_mask, payload_start, payload_len)
+    return SocketFrame(finbit, opcode, payload_len, payload, extra)
 
 
 def get_payload_len(frame, payload_len):
@@ -43,6 +44,7 @@ def get_payload_len(frame, payload_len):
 def _get_payload(frame, fin_mask, payload_start, payload_len):
     mask = (fin_mask & frame[1]) >> 7
     mask_result = b""
+    extra = None
     if mask:
         mask_info = frame[payload_start : payload_start + 4]
         payload_start += 4
@@ -56,9 +58,13 @@ def _get_payload(frame, fin_mask, payload_start, payload_len):
                 mask_result += m.to_bytes(1, "big")
 
             p_index += 4
-        return mask_result
 
-    return frame[payload_start : payload_start + payload_len]
+        return [mask_result, frame[payload_start + payload_len :]]
+
+    return [
+        frame[payload_start : payload_start + payload_len],
+        frame[payload_start + payload_len :],
+    ]
 
 
 def _get_extended(frame, end):
@@ -85,15 +91,15 @@ def generate_ws_frame(payload: bytes):
 if __name__ == "__main__":
     res = compute_accept("x6BweGU0VvnAoNDZAvk9nw==")
     assert res == "YeRsVEUiNewITV9hNUolbpQg12w="
-    frame_info = b"\x81\x86\x1A\x2B\x3C\x4D\x52\x4e\x50\x21\x75\x0a"
-    ws = parse_ws_frame(frame_info)
+    frame = b"\x81\x86\x1A\x2B\x3C\x4D\x52\x4e\x50\x21\x75\x0a"
+    ws = parse_ws_frame(frame)
     assert ws.fin_bit == 1
     assert ws.opcode == 1
     assert ws.payload_length == 6
     assert ws.payload == b"Hello!"
 
-    frame_info = b"\x81\x06Hello!"
-    ws = parse_ws_frame(frame_info)
+    frame = b"\x81\x06Hello!"
+    ws = parse_ws_frame(frame)
     assert ws.fin_bit == 1
     assert ws.opcode == 1
     assert ws.payload_length == 6

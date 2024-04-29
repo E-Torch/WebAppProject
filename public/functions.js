@@ -15,9 +15,18 @@ function initWS() {
       // send message to WebRTC
       processMessageAsWebRTC(message, messageType);
     }
+    if (messageType === "updateList") {
+      updateList(message.list);
+    }
   };
 }
-
+function updateList(list) {
+  const userList = document.getElementById("user-list");
+  userList.innerHTML = "";
+  for (const user of list) {
+    userList.innerHTML += "<p>" + user + "</p>";
+  }
+}
 function deleteMessage(messageId) {
   const request = new XMLHttpRequest();
   request.onreadystatechange = function () {
